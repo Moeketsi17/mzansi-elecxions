@@ -22,7 +22,7 @@ export function TurnoutChart({ height = 220 }: { height?: number }) {
       </div>
       <div className="relative" style={{ height }}>
         <div className="absolute inset-x-0 border-t border-dashed border-line-strong" style={{ bottom: "50%" }}>
-          <span className="absolute -top-4 right-0 text-[10px] text-fg-3">50%</span>
+          <span className="absolute -top-4 right-0 text-[11px] text-fg-3">50%</span>
         </div>
         <ul className="relative grid h-full grid-cols-7 items-end gap-1.5 sm:gap-3" aria-label="Turnout by election">
           {ELECTIONS.map((e, i) => {
@@ -53,7 +53,7 @@ export function TurnoutChart({ height = 220 }: { height?: number }) {
       </div>
       <div className="mt-2 grid grid-cols-7 gap-1.5 sm:gap-3">
         {ELECTIONS.map((e) => (
-          <span key={e.year} className={`text-center font-mono text-[10px] ${f.year === e.year ? "text-fg" : "text-fg-3"}`}>
+          <span key={e.year} className={`text-center font-mono text-[11px] ${f.year === e.year ? "text-fg" : "text-fg-3"}`}>
             {e.year}
           </span>
         ))}

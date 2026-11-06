@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, ArrowRightIcon, MapTrifoldIcon } from "@phosphor-icons/react/ssr";
+import { MapTrifoldIcon } from "@phosphor-icons/react/ssr";
+import { Suspense } from "react";
+import { YearNav } from "@/components/year-nav";
 import { Hemicycle } from "@/components/charts/hemicycle";
 import { ResultsTable } from "@/components/results-table";
 import { ProvinceExplorer } from "@/components/province-explorer";
-import { ELECTIONS, getElection, previousElection, type Election } from "@/lib/elections";
+import { ELECTIONS, getElection, previousElection, YEARS, type Election } from "@/lib/elections";
 import { CATEGORIES, EVENTS, formatEventDate } from "@/lib/events";
 import { fmtDate, fmtInt, fmtPct } from "@/lib/format";
 
@@ -19,14 +21,36 @@ export async function generateMetadata({ params }: PageProps<"/elections/[year]"
   return e ? { title: `${e.year} general election`, description: e.summary } : {};
 }
 
-export default async function ElectionPage({ params }: PageProps<"/elections/[year]">) {
+export default function ElectionPage({ params }: PageProps<"/elections/[year]">) {
+  // Reading params happens inside Suspense so navigations render the shell instantly.
+  return (
+    <Suspense fallback={<ElectionSkeleton />}>
+      <Election params={params} />
+    </Suspense>
+  );
+}
+
+function ElectionSkeleton() {
+  return (
+    <div aria-hidden>
+      <div className="border-b border-line px-4 py-3 md:px-8">
+        <div className="skeleton mx-auto h-9 max-w-[1400px]" />
+      </div>
+      <div className="mx-auto max-w-[1400px] space-y-4 px-4 pb-10 pt-10 md:px-8">
+        <div className="skeleton h-3 w-56" />
+        <div className="skeleton h-12 w-3/4 max-w-xl" />
+        <div className="skeleton h-4 w-full max-w-2xl" />
+      </div>
+    </div>
+  );
+}
+
+async function Election({ params }: Pick<PageProps<"/elections/[year]">, "params">) {
   const { year } = await params;
   const election = getElection(Number(year));
   if (!election) notFound();
 
   const prev = previousElection(election.year);
-  const idx = ELECTIONS.indexOf(election);
-  const next = ELECTIONS[idx + 1];
   const lead = election.results[0];
   const before = EVENTS.filter((ev) => ev.date < election.date && (!prev || ev.date > prev.date) && ev.category !== "election").sort(
     (a, b) => b.date.localeCompare(a.date),
@@ -34,7 +58,7 @@ export default async function ElectionPage({ params }: PageProps<"/elections/[ye
 
   return (
     <>
-      <YearSwitcher current={election.year} prev={prev} next={next} />
+      <YearNav years={YEARS} current={election.year} href={(y) => `/elections/${y}`} label="Election year" />
 
       <div className="mx-auto grid max-w-[1400px] gap-8 px-4 pb-12 pt-10 md:px-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
         <div>
@@ -46,7 +70,7 @@ export default async function ElectionPage({ params }: PageProps<"/elections/[ye
             {election.summary}
           </p>
         </div>
-        <dl className="rise grid grid-cols-3 gap-6 border-t border-line pt-5 lg:border-t-0 lg:pt-0" style={{ ["--i" as string]: 3 }}>
+        <dl className="rise grid grid-cols-3 gap-4 border-t sm:gap-6 border-line pt-5 lg:border-t-0 lg:pt-0" style={{ ["--i" as string]: 3 }}>
           <Stat label="Turnout" value={fmtPct(election.turnout)} hint={election.registered ? "of registered" : "estimated"} />
           <Stat label="Votes cast" value={`${(election.cast / 1e6).toFixed(2)}m`} hint={`${fmtInt(election.valid)} valid`} />
           <Stat
@@ -88,7 +112,7 @@ export default async function ElectionPage({ params }: PageProps<"/elections/[ye
                       {formatEventDate(ev)}
                     </time>
                     <span className="text-sm text-fg transition group-hover:text-signal">{ev.title}</span>
-                    <span className="text-[10px] uppercase tracking-[0.1em] text-fg-3">{CATEGORIES[ev.category].label}</span>
+                    <span className="text-[11px] uppercase tracking-[0.1em] text-fg-3">{CATEGORIES[ev.category].label}</span>
                   </Link>
                 </li>
               ))}
@@ -141,7 +165,7 @@ function RegionalEmpty({ election }: { election: Election }) {
             <Link
               key={e.year}
               href={`/elections/${e.year}`}
-              className="rounded-full border border-line-strong px-3 py-1.5 text-xs text-fg transition hover:bg-panel active:scale-[0.98]"
+              className="inline-flex min-h-10 items-center rounded-full border border-line-strong px-3.5 text-xs text-fg transition hover:bg-panel active:scale-[0.98] sm:min-h-0 sm:py-1.5"
             >
               Explore {e.year} by province
             </Link>
@@ -149,45 +173,5 @@ function RegionalEmpty({ election }: { election: Election }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function YearSwitcher({ current, prev, next }: { current: number; prev?: Election; next?: Election }) {
-  return (
-    <nav aria-label="Election year" className="border-b border-line">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-2 px-4 py-3 md:px-8">
-        <Link
-          href={prev ? `/elections/${prev.year}` : "#"}
-          aria-disabled={!prev}
-          aria-label="Previous election"
-          className={`rounded-full p-2 transition ${prev ? "text-fg-2 hover:bg-panel hover:text-fg" : "pointer-events-none text-fg-3/40"}`}
-        >
-          <ArrowLeftIcon size={16} />
-        </Link>
-        <ol className="no-scrollbar flex flex-1 gap-1 overflow-x-auto">
-          {ELECTIONS.map((e) => (
-            <li key={e.year}>
-              <Link
-                href={`/elections/${e.year}`}
-                aria-current={e.year === current ? "page" : undefined}
-                className={`block rounded-full px-3.5 py-1.5 font-mono text-sm transition ${
-                  e.year === current ? "bg-signal text-ink" : "text-fg-2 hover:bg-panel hover:text-fg"
-                }`}
-              >
-                {e.year}
-              </Link>
-            </li>
-          ))}
-        </ol>
-        <Link
-          href={next ? `/elections/${next.year}` : "#"}
-          aria-disabled={!next}
-          aria-label="Next election"
-          className={`rounded-full p-2 transition ${next ? "text-fg-2 hover:bg-panel hover:text-fg" : "pointer-events-none text-fg-3/40"}`}
-        >
-          <ArrowRightIcon size={16} />
-        </Link>
-      </div>
-    </nav>
   );
 }

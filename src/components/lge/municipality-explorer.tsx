@@ -51,7 +51,7 @@ export function MunicipalityExplorer({ year, municipalities }: { year: number; m
                 setLimit(25);
               }}
               placeholder="e.g. Johannesburg, eThekwini, Stellenbosch"
-              className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-fg-3"
+              className="h-11 w-full bg-transparent text-base outline-none placeholder:text-fg-3 sm:h-10 sm:text-sm"
             />
             {query && (
               <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="text-fg-3 hover:text-fg">
@@ -180,7 +180,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition active:scale-[0.97] ${
+      className={`flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs transition active:scale-[0.97] sm:min-h-0 sm:px-3 sm:py-1.5 ${
         active ? "border-line-strong bg-panel-2 text-fg" : "border-line text-fg-3 hover:text-fg-2"
       }`}
     >
@@ -193,14 +193,14 @@ function StatusBadge({ status, pct }: { status: CouncilStatus; pct: number }) {
   if (status === "counting")
     return (
       <span className="justify-self-end text-right font-mono text-[11px] text-fg-3 tabular">
-        <span className="font-sans text-[10px] uppercase tracking-[0.1em]">Counting</span>
+        <span className="font-sans text-[11px] uppercase tracking-[0.1em]">Counting</span>
         <br />
         {pct.toFixed(0)}% in
       </span>
     );
   return (
     <span
-      className={`justify-self-end rounded-md px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] ${
+      className={`justify-self-end rounded-md px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] ${
         status === "majority" ? "bg-fg-2/15 text-fg" : "text-fg-2 ring-1 ring-inset ring-fg-3/50"
       }`}
     >
@@ -261,7 +261,7 @@ function CouncilDetail({ year, id }: { year: number; id: number }) {
               setState({ status: "loading" });
               setAttempt(attempt + 1);
             }}
-            className="mt-2 text-xs text-fg underline decoration-line-strong underline-offset-4"
+            className="mt-2 min-h-10 text-xs text-fg underline decoration-line-strong underline-offset-4 sm:min-h-0"
           >
             Try again
           </button>
@@ -322,7 +322,7 @@ function CouncilDetail({ year, id }: { year: number; id: number }) {
                   <span
                     title={label}
                     aria-label={label}
-                    className="block size-4 rounded-[3px]"
+                    className="block size-5 rounded-[3px] sm:size-4"
                     style={meta ? { background: meta.color } : { boxShadow: "inset 0 0 0 1px var(--color-line-strong)" }}
                   />
                 </li>

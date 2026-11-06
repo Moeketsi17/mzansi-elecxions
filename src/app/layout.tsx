@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0c0d10",
+  // Lets the bottom tab bar pad itself clear of the iPhone home indicator.
+  viewportFit: "cover",
 };
 
 // Whether the current local election was still being counted when the results snapshot was taken.
@@ -28,7 +30,7 @@ const countingNow = !snapshotYear(CURRENT_LGE)?.complete;
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-ZA" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body className="grain flex min-h-[100dvh] flex-col">
+      <body className="grain flex min-h-[100dvh] flex-col" suppressHydrationWarning>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-signal focus:px-4 focus:py-2 focus:text-ink"
@@ -71,18 +73,18 @@ function SiteFooter() {
         </div>
         <div className="space-y-2">
           <p className="text-fg-2">Explore</p>
-          <ul className="space-y-1.5">
-            <li><Link className="hover:text-fg" href="/elections/2024">2024 national results</Link></li>
-            <li><Link className="hover:text-fg" href="/local">Local elections</Link></li>
-            <li><Link className="hover:text-fg" href="/trends">How the vote changed</Link></li>
-            <li><Link className="hover:text-fg" href="/timeline">News timeline</Link></li>
+          <ul className="space-y-0.5">
+            <li><Link className="inline-block py-1.5 hover:text-fg" href="/elections/2024">2024 national results</Link></li>
+            <li><Link className="inline-block py-1.5 hover:text-fg" href="/local">Local elections</Link></li>
+            <li><Link className="inline-block py-1.5 hover:text-fg" href="/trends">How the vote changed</Link></li>
+            <li><Link className="inline-block py-1.5 hover:text-fg" href="/timeline">News timeline</Link></li>
           </ul>
         </div>
         <div className="space-y-2">
           <p className="text-fg-2">Official sources</p>
-          <ul className="space-y-1.5">
-            <li><a className="hover:text-fg" href="https://www.elections.org.za">Electoral Commission (IEC)</a></li>
-            <li><a className="hover:text-fg" href="https://openup.org.za">OpenUp</a></li>
+          <ul className="space-y-0.5">
+            <li><a className="inline-block py-1.5 hover:text-fg" href="https://www.elections.org.za">Electoral Commission (IEC)</a></li>
+            <li><a className="inline-block py-1.5 hover:text-fg" href="https://openup.org.za">OpenUp</a></li>
           </ul>
         </div>
       </div>

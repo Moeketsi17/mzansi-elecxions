@@ -77,7 +77,7 @@ export default function LocalPage() {
                       </span>
                       <span className="text-right text-xs text-fg-2">
                         {year === CURRENT_LGE && y && !y.complete ? (
-                          <span className="rounded-full bg-live/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-live">Live</span>
+                          <span className="rounded-full bg-live/15 px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] text-live">Live</span>
                         ) : (
                           lead && (
                             <>

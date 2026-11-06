@@ -40,10 +40,10 @@ export default function Home() {
           </p>
           <div className="rise mt-9 flex flex-wrap items-center gap-3" style={{ ["--i" as string]: 3 }}>
             <Link
-              href={`/elections/${LATEST.year}`}
+              href="/live"
               className="group flex items-center gap-2 rounded-full bg-signal px-5 py-3 text-sm font-medium text-ink transition hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98]"
             >
-              See the {LATEST.year} results
+              See latest results
               <ArrowRightIcon size={16} className="transition group-hover:translate-x-0.5" />
             </Link>
             <Link
@@ -124,7 +124,7 @@ export default function Home() {
                 <p className="text-xs uppercase tracking-[0.14em] text-fg-3">News timeline</p>
                 <h2 className="mt-2 text-2xl tracking-tight md:text-3xl">The latest events</h2>
               </div>
-              <Link href="/timeline" className="group flex items-center gap-1.5 text-sm text-fg-2 hover:text-fg">
+              <Link href="/timeline" className="group -my-2 flex items-center gap-1.5 py-2 text-sm text-fg-2 hover:text-fg">
                 Full timeline <ArrowRightIcon size={14} className="transition group-hover:translate-x-0.5" />
               </Link>
             </div>
@@ -139,7 +139,7 @@ export default function Home() {
                       <div className="text-[15px] text-fg transition group-hover:text-signal">{ev.title}</div>
                       <div className="mt-1 line-clamp-2 max-w-[60ch] text-sm text-fg-3">{ev.summary}</div>
                     </div>
-                    <span className="hidden text-[10px] uppercase tracking-[0.1em] text-fg-3 sm:block">{CATEGORIES[ev.category].label}</span>
+                    <span className="hidden text-[11px] uppercase tracking-[0.1em] text-fg-3 sm:block">{CATEGORIES[ev.category].label}</span>
                   </Link>
                 </li>
               ))}
@@ -153,7 +153,7 @@ export default function Home() {
         <div className="mx-auto max-w-[1400px] px-4 py-16 md:px-8 md:py-24">
           <div className="mb-8 flex items-end justify-between gap-4">
             <h2 className="text-2xl tracking-tight md:text-3xl">Pick an election</h2>
-            <Link href="/elections" className="text-sm text-fg-2 hover:text-fg">
+            <Link href="/elections" className="-my-2 py-2 text-sm text-fg-2 hover:text-fg">
               All elections
             </Link>
           </div>

@@ -29,7 +29,9 @@ function layout(rows: { party: PartyId; seats: number }[]): { seats: Seat[]; r: 
     const n = counts[ri];
     for (let k = 0; k < n; k++) {
       const a = Math.PI - (Math.PI * k) / Math.max(n - 1, 1);
-      points.push({ x: CX + r * Math.cos(a), y: CY - r * Math.sin(a), a });
+      // Round: Math.cos/sin can differ in the last digit between Node and the browser,
+      // which would make the server-rendered SVG fail to hydrate.
+      points.push({ x: Math.round((CX + r * Math.cos(a)) * 100) / 100, y: Math.round((CY - r * Math.sin(a)) * 100) / 100, a });
     }
   });
   points.sort((p, q) => q.a - p.a);
@@ -107,7 +109,7 @@ export const Hemicycle = memo(function Hemicycle({
                 onMouseLeave={() => setFocus(null)}
                 onFocus={() => setFocus(x.party)}
                 onBlur={() => setFocus(null)}
-                className="flex items-center gap-1.5 text-fg-2 hover:text-fg"
+                className="flex min-h-8 items-center gap-1.5 text-fg-2 hover:text-fg"
               >
                 <span className="size-2 rounded-full" style={{ background: party(x.party).color }} />
                 {party(x.party).short}

@@ -1,8 +1,7 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react/ssr";
+import { YearNav } from "@/components/year-nav";
 import { LgeResultsTable } from "@/components/lge/lge-results-table";
 import { CouncilBar } from "@/components/lge/council-bar";
 import { MunicipalityExplorer } from "@/components/lge/municipality-explorer";
@@ -24,41 +23,32 @@ export async function generateMetadata({ params }: PageProps<"/local/[year]">): 
   return isLgeYear(Number(year)) ? { title: `${year} local elections`, description: LGE_COPY[Number(year)].summary } : {};
 }
 
-export default async function LocalYearPage({ params }: PageProps<"/local/[year]">) {
+export default function LocalYearPage({ params }: PageProps<"/local/[year]">) {
+  // Reading params happens inside Suspense so navigations render the shell instantly.
+  return (
+    <Suspense fallback={<YearPageSkeleton />}>
+      <LocalYear params={params} />
+    </Suspense>
+  );
+}
+
+async function LocalYear({ params }: Pick<PageProps<"/local/[year]">, "params">) {
   const { year: raw } = await params;
   const year = Number(raw);
   if (!isLgeYear(year)) notFound();
   const copy = LGE_COPY[year];
-  const i = LGE_YEARS.indexOf(year);
-  const prev = LGE_YEARS[i - 1];
-  const next = LGE_YEARS[i + 1];
 
   return (
     <>
-      <nav aria-label="Local election year" className="border-b border-line">
-        <div className="mx-auto flex max-w-[1400px] items-center gap-2 px-4 py-3 md:px-8">
-          <YearArrow href={prev ? `/local/${prev}` : undefined} label="Previous local election" dir="prev" />
-          <ol className="no-scrollbar flex flex-1 gap-1 overflow-x-auto">
-            {LGE_YEARS.map((y) => (
-              <li key={y}>
-                <Link
-                  href={`/local/${y}`}
-                  aria-current={y === year ? "page" : undefined}
-                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-mono text-sm transition ${
-                    y === year ? "bg-signal text-ink" : "text-fg-2 hover:bg-panel hover:text-fg"
-                  }`}
-                >
-                  {y}
-                  {y === CURRENT_LGE && !snapshotYear(y)?.complete && <span className="size-1.5 rounded-full bg-live" aria-label="live" />}
-                </Link>
-              </li>
-            ))}
-          </ol>
-          <YearArrow href={next ? `/local/${next}` : undefined} label="Next local election" dir="next" />
-        </div>
-      </nav>
+      <YearNav
+        years={LGE_YEARS}
+        current={year}
+        href={(y) => `/local/${y}`}
+        label="Local election year"
+        liveYear={snapshotYear(CURRENT_LGE)?.complete ? undefined : CURRENT_LGE}
+      />
 
-      <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-10 md:px-8">
+      <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-8 sm:pt-10 md:px-8">
         <p className="rise mb-4 text-xs uppercase tracking-[0.16em] text-fg-3">
           Local government elections &middot; {fmtDate(LGE_DATES[year])}
         </p>
@@ -83,6 +73,21 @@ export default async function LocalYearPage({ params }: PageProps<"/local/[year]
   );
 }
 
+function YearPageSkeleton() {
+  return (
+    <div aria-hidden>
+      <div className="border-b border-line px-4 py-3 md:px-8">
+        <div className="skeleton mx-auto h-9 max-w-[1400px]" />
+      </div>
+      <div className="mx-auto max-w-[1400px] space-y-4 px-4 pb-10 pt-10 md:px-8">
+        <div className="skeleton h-3 w-56" />
+        <div className="skeleton h-12 w-3/4 max-w-xl" />
+        <div className="skeleton h-4 w-full max-w-2xl" />
+      </div>
+    </div>
+  );
+}
+
 async function YearBody({ year }: { year: number }) {
   const result = await getLgeYear(year);
   if (!result) notFound();
@@ -98,13 +103,15 @@ async function YearBody({ year }: { year: number }) {
       <section className="border-t border-line">
         <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-8">
           {live && (
-            <p className="mb-6 flex flex-wrap items-center gap-2 text-xs text-fg-2">
-              <span className="relative flex size-2" aria-hidden>
+            <p className="mb-6 flex items-start gap-2 text-xs leading-relaxed text-fg-2">
+              <span className="relative mt-1 flex size-2 shrink-0" aria-hidden>
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-live opacity-70" />
                 <span className="relative inline-flex size-2 rounded-full bg-live" />
               </span>
-              Counting live &middot; IEC update {reportTime(d.reportDate)} &middot; this page refreshes every minute
-              {result.stale && <span className="text-fg-3"> &middot; the feed did not answer, showing last known figures</span>}
+              <span>
+                Counting live &middot; IEC update {reportTime(d.reportDate)} &middot; refreshes every minute
+                {result.stale && <span className="text-fg-3"> &middot; the feed did not answer, showing last known figures</span>}
+              </span>
             </p>
           )}
           <dl className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -202,20 +209,5 @@ function Stat({ label, value, hint }: { label: string; value: string; hint: stri
       <dd className="mt-1 font-mono text-2xl tracking-tight tabular">{value}</dd>
       <dd className="text-[11px] text-fg-3">{hint}</dd>
     </div>
-  );
-}
-
-function YearArrow({ href, label, dir }: { href?: string; label: string; dir: "prev" | "next" }) {
-  const Icon = dir === "prev" ? ArrowLeftIcon : ArrowRightIcon;
-  if (!href)
-    return (
-      <span className="p-2 text-fg-3/40" aria-hidden>
-        <Icon size={16} />
-      </span>
-    );
-  return (
-    <Link href={href} aria-label={label} className="rounded-full p-2 text-fg-2 transition hover:bg-panel hover:text-fg">
-      <Icon size={16} />
-    </Link>
   );
 }

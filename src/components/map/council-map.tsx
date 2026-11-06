@@ -234,12 +234,12 @@ export function CouncilMap({
             <button
               type="button"
               onClick={() => setLevel(level.kind === "council" ? { kind: "province", id: level.province } : { kind: "country" })}
-              className="mr-2 flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1 text-xs text-fg transition hover:bg-panel active:scale-[0.97]"
+              className="mr-2 flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 text-xs text-fg transition hover:bg-panel active:scale-[0.97] sm:min-h-0 sm:py-1"
             >
               <ArrowLeftIcon size={12} /> Back
             </button>
           )}
-          <button type="button" onClick={() => setLevel({ kind: "country" })} className="text-fg-2 hover:text-fg">
+          <button type="button" onClick={() => setLevel({ kind: "country" })} className="min-h-10 text-fg-2 hover:text-fg sm:min-h-0">
             South Africa
           </button>
           {level.kind !== "country" && (
@@ -248,7 +248,7 @@ export function CouncilMap({
               <button
                 type="button"
                 onClick={() => setLevel({ kind: "province", id: level.kind === "province" ? level.id : level.province })}
-                className={level.kind === "province" ? "text-fg" : "text-fg-2 hover:text-fg"}
+                className={`min-h-10 sm:min-h-0 ${level.kind === "province" ? "text-fg" : "text-fg-2 hover:text-fg"}`}
               >
                 {PROVINCE_IDS[level.kind === "province" ? level.id : level.province]?.name}
               </button>
@@ -383,7 +383,7 @@ export function CouncilMap({
                         <span className="font-mono tabular">{fmtPct(t.pct)}</span>
                       </div>
                     ))}
-                    <div className="mt-2 text-[10px] text-fg-3">
+                    <div className="mt-2 text-[11px] text-fg-3">
                       {level.kind === "country" ? "Click to zoom into the province" : "Click to see the wards"}
                     </div>
                   </>
@@ -451,7 +451,7 @@ export function CouncilMap({
                 setLevel({ kind: "council", id, province: c.province });
               }
             }}
-            className="h-10 rounded-lg border border-line bg-panel px-3 text-sm text-fg outline-none focus:border-line-strong"
+            className="h-11 rounded-lg border border-line bg-panel px-3 text-base text-fg outline-none focus:border-line-strong sm:h-10 sm:text-sm"
           >
             <option value="">Choose a council</option>
             {sortedCouncils.map((m) => (
@@ -546,7 +546,7 @@ export function CouncilMap({
                         type="button"
                         aria-pressed={active}
                         onClick={() => setLevel({ kind: "province", id: Number(id) })}
-                        className={`w-full rounded-lg border px-2.5 py-1.5 text-left text-xs transition active:scale-[0.98] ${
+                        className={`min-h-10 w-full rounded-lg border px-3 text-left text-xs transition active:scale-[0.98] sm:min-h-0 sm:px-2.5 sm:py-1.5 ${
                           active ? "border-line-strong bg-panel-2 text-fg" : "border-line text-fg-2 hover:text-fg"
                         }`}
                       >

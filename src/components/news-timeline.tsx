@@ -47,6 +47,7 @@ export function NewsTimeline() {
   const [cats, setCats] = useState<Category[]>(ALL);
   const [partyFilter, setPartyFilter] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     const read = () => {
@@ -65,22 +66,41 @@ export function NewsTimeline() {
     [cats, partyFilter],
   );
   const groups = bucket(filtered);
+  const activeFilters = (cats.length === ALL.length ? 0 : ALL.length - cats.length) + (partyFilter ? 1 : 0);
   const partyOptions = ["ANC", "DA", "EFF", "MK", "IFP", "COPE"];
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[15rem_1fr] lg:gap-16">
+    <div className="grid gap-8 lg:grid-cols-[15rem_1fr] lg:gap-16">
       <aside className="lg:sticky lg:top-24 lg:self-start" aria-label="Filters">
-        <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-fg-3">
+        {/* Phones: filters fold away behind a button so the news comes first. */}
+        <button
+          type="button"
+          aria-expanded={filtersOpen}
+          aria-controls="timeline-filters"
+          onClick={() => setFiltersOpen((o) => !o)}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl border border-line px-4 text-sm text-fg-2 transition active:scale-[0.99] lg:hidden"
+        >
+          <span className="flex items-center gap-2">
+            <FunnelSimpleIcon size={16} /> Filter
+            {activeFilters > 0 && (
+              <span className="rounded-full bg-signal px-2 py-0.5 text-[11px] text-ink">{activeFilters} on</span>
+            )}
+          </span>
+          <span className="font-mono text-xs text-fg-3 tabular">
+            {filtered.length} of {EVENTS.length} events
+          </span>
+        </button>
+        <div className="mb-3 hidden items-center gap-2 text-xs uppercase tracking-[0.12em] text-fg-3 lg:flex">
           <FunnelSimpleIcon size={14} /> Filter
         </div>
-        <div className="space-y-6">
+        <div id="timeline-filters" className={`mt-5 space-y-6 lg:mt-0 lg:block ${filtersOpen ? "block" : "hidden"}`}>
           <fieldset>
             <legend className="mb-2 text-sm text-fg-2">Topic</legend>
             <div className="flex flex-wrap gap-1.5 lg:flex-col lg:items-start">
               <button
                 type="button"
                 onClick={() => setCats(cats.length === ALL.length ? [] : ALL)}
-                className="rounded-full px-2.5 py-1 text-xs text-fg-3 underline decoration-line-strong underline-offset-4 hover:text-fg"
+                className="min-h-10 rounded-full px-2.5 text-xs text-fg-3 underline lg:min-h-0 lg:py-1 decoration-line-strong underline-offset-4 hover:text-fg"
               >
                 {cats.length === ALL.length ? "Clear all" : "Select all"}
               </button>
@@ -93,7 +113,7 @@ export function NewsTimeline() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => setCats((s) => (active ? s.filter((x) => x !== c) : [...s, c]))}
-                    className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition active:scale-[0.97] ${
+                    className={`flex items-center gap-2 min-h-10 rounded-full border px-3.5 text-xs transition lg:min-h-0 lg:px-3 lg:py-1.5 active:scale-[0.97] ${
                       active ? "border-line-strong bg-panel-2 text-fg" : "border-line text-fg-3 hover:text-fg-2"
                     }`}
                   >
@@ -111,7 +131,7 @@ export function NewsTimeline() {
                 type="button"
                 aria-pressed={partyFilter === null}
                 onClick={() => setPartyFilter(null)}
-                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                className={`min-h-10 rounded-full border px-3.5 text-xs transition lg:min-h-0 lg:px-3 lg:py-1.5 ${
                   partyFilter === null ? "border-line-strong bg-panel-2 text-fg" : "border-line text-fg-3"
                 }`}
               >
@@ -123,7 +143,7 @@ export function NewsTimeline() {
                   type="button"
                   aria-pressed={partyFilter === p}
                   onClick={() => setPartyFilter(partyFilter === p ? null : p)}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                  className={`flex items-center gap-1.5 min-h-10 rounded-full border px-3.5 text-xs transition lg:min-h-0 lg:px-3 lg:py-1.5 ${
                     partyFilter === p ? "border-line-strong bg-panel-2 text-fg" : "border-line text-fg-3 hover:text-fg-2"
                   }`}
                 >
@@ -170,7 +190,7 @@ export function NewsTimeline() {
                   {el && (
                     <Link
                       href={`/elections/${el.year}`}
-                      className="group flex items-center gap-1.5 text-xs text-fg-2 hover:text-fg"
+                      className="group -my-2 flex items-center gap-1.5 py-2 text-xs text-fg-2 hover:text-fg"
                     >
                       {el.year} results
                       <ArrowUpRightIcon size={12} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -217,7 +237,7 @@ function EventItem({ ev, highlighted }: { ev: NewsEvent; highlighted: boolean })
         <time dateTime={ev.date} className="font-mono text-fg-3">
           {formatEventDate(ev)}
         </time>
-        <span className="rounded-md bg-panel-2 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.1em] text-fg-2">
+        <span className="rounded-md bg-panel-2 px-1.5 py-0.5 text-[11px] uppercase tracking-[0.1em] text-fg-2">
           {CATEGORIES[ev.category].label}
         </span>
       </div>
@@ -249,7 +269,7 @@ function EventItem({ ev, highlighted }: { ev: NewsEvent; highlighted: boolean })
             href={ev.link}
             target="_blank"
             rel="noreferrer"
-            className="ml-auto flex items-center gap-1 text-xs text-fg-3 hover:text-fg"
+            className="-my-2 ml-auto flex items-center gap-1 py-2 text-xs text-fg-3 hover:text-fg"
           >
             Background <ArrowUpRightIcon size={12} />
           </a>

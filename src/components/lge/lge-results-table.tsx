@@ -54,7 +54,7 @@ export function LgeResultsTable({
                 {r.id === "OTHER" || !previous ? (
                   <span className="text-fg-3">–</span>
                 ) : before == null ? (
-                  <span className="rounded bg-signal/10 px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wider text-signal">New</span>
+                  <span className="rounded bg-signal/10 px-1.5 py-0.5 font-sans text-[11px] uppercase tracking-wider text-signal">New</span>
                 ) : (
                   <span className={r.pct >= before ? "text-fg" : "text-fg-3"}>{fmtDelta(r.pct - before)}</span>
                 )}

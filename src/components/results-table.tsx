@@ -53,7 +53,7 @@ export function ResultsTable({ election, limit }: { election: Election; limit?: 
               <div className="hidden text-right font-mono text-sm text-fg-2 tabular sm:block">{r.seats || "–"}</div>
               <div className="hidden text-right font-mono text-xs tabular sm:block">
                 {isNew ? (
-                  <span className="rounded bg-signal/10 px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wider text-signal">New</span>
+                  <span className="rounded bg-signal/10 px-1.5 py-0.5 font-sans text-[11px] uppercase tracking-wider text-signal">New</span>
                 ) : delta == null || Math.abs(delta) < 0.05 ? (
                   <span className="text-fg-3">{delta == null ? "–" : "±0.0"}</span>
                 ) : (

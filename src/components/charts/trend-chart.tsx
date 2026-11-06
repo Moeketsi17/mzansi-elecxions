@@ -3,14 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { trendSeries, type TrendPoint } from "@/lib/elections";
 import { CATEGORIES, EVENTS, formatEventDate, type Category, type NewsEvent } from "@/lib/events";
 import { party, TRACKED as NATIONAL_TRACKED, type PartyId } from "@/lib/parties";
 import { fmtPct } from "@/lib/format";
 
 const NATIONAL_POINTS = trendSeries();
-const T0 = Date.UTC(1993, 6, 1);
-const T1 = Date.UTC(2027, 3, 1);
 const t = (iso: string) => Date.parse(iso + "T00:00:00Z");
 
 const DEFAULT_ON: PartyId[] = ["ANC", "DA", "EFF", "MK", "IFP", "COPE"];
@@ -74,14 +73,47 @@ export function TrendChart({
   const [activeEvent, setActiveEvent] = useState<NewsEvent | null>(null);
 
   const narrow = width < 640;
-  const M = { top: 16, right: narrow ? 64 : 92, bottom: eventsOn ? 64 : 30, left: narrow ? 30 : 40 };
-  const iw = width - M.left - M.right;
+  const visible = TRACKED.filter((id) => on.includes(id));
+  const events = eventsOn ? EVENTS.filter((e) => cats.includes(e.category)) : [];
+
+  // Time axis spans only the data: first election to the latest election or news event, plus a small pad.
+  const first = t(POINTS[0].date);
+  const last = Math.max(t(POINTS[POINTS.length - 1].date), ...events.map((e) => t(e.date)));
+  const pad = (last - first) * 0.025;
+  // Phones: extra room on the left so the first points clear the inside axis labels.
+  const T0 = first - pad * (narrow ? 3.2 : 1);
+  const T1 = last + pad;
+
+  // Margins: on phones the y-axis labels sit inside the plot, and the right margin only fits the end labels shown.
+  const lastValues = POINTS[POINTS.length - 1].values;
+  const longest = Math.max(0, ...visible.filter((id) => lastValues[id] != null).map((id) => party(id).short.length));
+  const left = narrow ? 2 : 40;
+  const right = narrow ? Math.max(18, longest * 6.4 + 22) : 92;
+  const iw = width - left - right;
+  const x = (iso: string) => left + ((t(iso) - T0) / (T1 - T0)) * iw;
+
+  // News row: events closer than one dot apart drop into the next lane, so every event stays visible.
+  const chronological = [...events].sort((a, b) => a.date.localeCompare(b.date));
+  const DOT_GAP = 9;
+  const LANE_H = 11;
+  const laneOf = new Map<string, number>();
+  const laneEnds: number[] = [];
+  for (const ev of chronological) {
+    const ex = x(ev.date);
+    let lane = laneEnds.findIndex((end) => ex - end >= DOT_GAP);
+    if (lane === -1) lane = laneEnds.push(ex) - 1;
+    else laneEnds[lane] = ex;
+    laneOf.set(ev.id, lane);
+  }
+  const lanes = Math.max(laneEnds.length, 1);
+  const NEWS_TOP = 34; // gap below the year labels
+  const bandH = lanes * LANE_H + 6;
+
+  const M = { top: 16, right, bottom: eventsOn ? NEWS_TOP + bandH + 6 : 30, left };
   const ih = height - M.top - M.bottom;
-  const x = (iso: string) => M.left + ((t(iso) - T0) / (T1 - T0)) * iw;
   const yMax = 75;
   const y = (v: number) => M.top + ih - (v / yMax) * ih;
 
-  const visible = TRACKED.filter((id) => on.includes(id));
 
   const paths = visible.map((id) => {
         const segs: string[] = [];
@@ -108,8 +140,6 @@ export function TrendChart({
     M.top + ih,
   );
 
-  const events = eventsOn ? EVENTS.filter((e) => cats.includes(e.category) && t(e.date) < T1) : [];
-
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - box.left) / box.width) * width;
@@ -125,13 +155,38 @@ export function TrendChart({
     setHover(best);
   };
 
+  const dotY = (id: string) => M.top + ih + NEWS_TOP + 6 + (laneOf.get(id) ?? 0) * LANE_H;
+  const pickEvent = (e: React.PointerEvent<SVGRectElement>) => {
+    const svg = e.currentTarget.ownerSVGElement;
+    if (!svg || !events.length) return;
+    const box = svg.getBoundingClientRect();
+    const px = ((e.clientX - box.left) / box.width) * width;
+    const py = ((e.clientY - box.top) / box.height) * height;
+    // Nearest dot, weighting horizontal distance more: lanes are close together vertically.
+    const dist = (ev: NewsEvent) => Math.abs(x(ev.date) - px) + Math.abs(dotY(ev.id) - py) * 0.6;
+    let best = events[0];
+    for (const ev of events) if (dist(ev) < dist(best)) best = ev;
+    setActiveEvent(best);
+    setHover(null);
+    e.stopPropagation();
+  };
+  const step = (dir: 1 | -1) => {
+    const i = activeEvent ? chronological.findIndex((e) => e.id === activeEvent.id) : -1;
+    const next = chronological[i === -1 ? (dir === 1 ? 0 : chronological.length - 1) : i + dir];
+    if (next) setActiveEvent(next);
+  };
+
   const hp = hover != null ? POINTS[hover] : null;
   const ticks = [0, 20, 40, 60];
 
   return (
     <div>
       {!compact && (
-        <div className="mb-5 flex flex-wrap items-center gap-2" role="group" aria-label="Parties shown">
+        <div
+          className="no-scrollbar -mx-4 mb-3 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:mb-5 sm:flex-wrap sm:px-0"
+          role="group"
+          aria-label="Parties shown"
+        >
           {TRACKED.map((id) => {
             const active = on.includes(id);
             return (
@@ -140,7 +195,7 @@ export function TrendChart({
                 type="button"
                 aria-pressed={active}
                 onClick={() => setOn((s) => (active ? s.filter((p) => p !== id) : [...s, id]))}
-                className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition active:scale-[0.97] ${
+                className={`flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-xs transition active:scale-[0.97] sm:min-h-0 sm:px-3 sm:py-1.5 ${
                   active ? "border-line-strong bg-panel-2 text-fg" : "border-line text-fg-3 hover:text-fg-2"
                 }`}
               >
@@ -159,7 +214,7 @@ export function TrendChart({
                 type="button"
                 aria-pressed={eventsOn}
                 onClick={() => setEventsOn((v) => !v)}
-                className={`rounded-full border px-3 py-1.5 text-xs transition active:scale-[0.97] ${
+                className={`min-h-10 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-xs transition active:scale-[0.97] sm:min-h-0 sm:px-3 sm:py-1.5 ${
                   eventsOn ? "border-signal/40 bg-signal/10 text-signal" : "border-line text-fg-3"
                 }`}
               >
@@ -171,7 +226,11 @@ export function TrendChart({
       )}
 
       {!compact && eventsOn && (
-        <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="News categories shown">
+        <div
+          className="no-scrollbar -mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0"
+          role="group"
+          aria-label="News categories shown"
+        >
           {(Object.keys(CATEGORIES) as Category[]).map((c) => {
             const active = cats.includes(c);
             return (
@@ -180,7 +239,7 @@ export function TrendChart({
                 type="button"
                 aria-pressed={active}
                 onClick={() => setCats((s) => (active ? s.filter((x) => x !== c) : [...s, c]))}
-                className={`rounded-md px-2 py-1 text-[11px] uppercase tracking-[0.08em] transition ${
+                className={`min-h-9 shrink-0 rounded-md px-2.5 text-[11px] uppercase tracking-[0.08em] transition sm:min-h-0 sm:px-2 sm:py-1 ${
                   active ? "bg-panel-2 text-fg-2" : "text-fg-3/70 line-through decoration-fg-3/40"
                 }`}
               >
@@ -199,20 +258,42 @@ export function TrendChart({
           role="img"
           aria-label={label}
           onPointerMove={onMove}
+          onPointerDown={onMove}
           onPointerLeave={() => setHover(null)}
         >
           {/* grid */}
           {ticks.map((v) => (
             <g key={v}>
               <line x1={M.left} x2={M.left + iw} y1={y(v)} y2={y(v)} stroke="var(--color-line)" />
-              <text x={M.left - 8} y={y(v)} dy="0.32em" textAnchor="end" className="fill-fg-3 font-mono text-[10px]">
-                {v}%
-              </text>
+              {narrow ? (
+                // Phones: label sits on the gridline inside the plot, so the plot can use the full width.
+                <text
+                  x={M.left + 2}
+                  y={y(v) - 5}
+                  className="fill-fg-3 font-mono text-[11px]"
+                  stroke="var(--color-ink)"
+                  strokeWidth={4}
+                  strokeLinejoin="round"
+                  paintOrder="stroke"
+                >
+                  {v}%
+                </text>
+              ) : (
+                <text x={M.left - 8} y={y(v)} dy="0.32em" textAnchor="end" className="fill-fg-3 font-mono text-[11px]">
+                  {v}%
+                </text>
+              )}
             </g>
           ))}
           {/* majority line */}
           <line x1={M.left} x2={M.left + iw} y1={y(50)} y2={y(50)} stroke="var(--color-signal)" strokeOpacity="0.35" strokeDasharray="3 4" />
-          <text x={M.left + 6} y={y(50) - 6} className="fill-signal/70 text-[10px]">
+          <text x={narrow ? M.left + iw - 4 : M.left + 6} y={y(50) - 6} textAnchor={narrow ? "end" : "start"}
+            className="fill-signal/70 text-[11px]"
+            stroke="var(--color-ink)"
+            strokeWidth={4}
+            strokeLinejoin="round"
+            paintOrder="stroke"
+          >
             50% majority
           </text>
 
@@ -230,7 +311,7 @@ export function TrendChart({
                 x={x(p.date)}
                 y={M.top + ih + 18}
                 textAnchor="middle"
-                className={`font-mono text-[10px] ${hover === i ? "fill-fg" : "fill-fg-3"}`}
+                className={`font-mono text-[11px] ${hover === i ? "fill-fg" : "fill-fg-3"}`}
               >
                 {narrow ? `'${String(p.year).slice(2)}` : p.year}
                 {p.year === provisionalYear && !narrow ? "*" : ""}
@@ -291,39 +372,55 @@ export function TrendChart({
           {/* news markers */}
           {eventsOn && (
             <g>
-              <line x1={M.left} x2={M.left + iw} y1={M.top + ih + 36} y2={M.top + ih + 36} stroke="var(--color-line)" />
-              {!narrow && (
-                <text x={M.left - 8} y={M.top + ih + 36} dy="0.32em" textAnchor="end" className="fill-fg-3 text-[9px] uppercase">
-                  News
-                </text>
+              <text
+                x={M.left - 8}
+                y={M.top + ih + NEWS_TOP + 6}
+                dy="0.32em"
+                textAnchor="end"
+                className="fill-fg-3 text-[10px] uppercase"
+              >
+                {narrow ? "" : "News"}
+              </text>
+              {/* One hit area for the whole row: picks the nearest dot, so clustered events stay tappable. */}
+              <rect
+                x={M.left - 8}
+                y={M.top + ih + NEWS_TOP - 6}
+                width={iw + 16}
+                height={bandH + 10}
+                fill="transparent"
+                className="cursor-pointer"
+                onPointerDown={pickEvent}
+                onPointerMove={pickEvent}
+              />
+              {activeEvent && laneOf.has(activeEvent.id) && (
+                <line
+                  x1={x(activeEvent.date)}
+                  x2={x(activeEvent.date)}
+                  y1={M.top}
+                  y2={dotY(activeEvent.id)}
+                  stroke="var(--color-signal)"
+                  strokeOpacity="0.35"
+                  strokeDasharray="2 3"
+                  pointerEvents="none"
+                />
               )}
-              {events.map((ev) => {
-                const ex = x(ev.date);
+              {chronological.map((ev) => {
                 const active = activeEvent?.id === ev.id;
                 return (
-                  <g
+                  <circle
                     key={ev.id}
-                    className="cursor-pointer"
-                    onPointerEnter={() => setActiveEvent(ev)}
-                    onClick={() => setActiveEvent(ev)}
+                    cx={x(ev.date)}
+                    cy={dotY(ev.id)}
+                    r={active ? 4.5 : 3}
+                    fill={active ? "var(--color-signal)" : ev.category === "election" ? "var(--color-fg-2)" : "var(--color-fg-3)"}
+                    stroke="var(--color-ink)"
+                    strokeWidth={1.5}
+                    pointerEvents="none"
                     tabIndex={0}
                     role="button"
                     aria-label={`${formatEventDate(ev)}: ${ev.title}`}
                     onFocus={() => setActiveEvent(ev)}
-                  >
-                    <rect x={ex - 7} y={M.top + ih + 26} width={14} height={22} fill="transparent" />
-                    <line
-                      x1={ex}
-                      x2={ex}
-                      y1={M.top + ih + 30}
-                      y2={M.top + ih + 42}
-                      stroke={active ? "var(--color-signal)" : "var(--color-fg-3)"}
-                      strokeWidth={active ? 2 : 1.5}
-                    />
-                    {active && (
-                      <line x1={ex} x2={ex} y1={M.top} y2={M.top + ih} stroke="var(--color-signal)" strokeOpacity="0.3" strokeDasharray="2 3" />
-                    )}
-                  </g>
+                  />
                 );
               })}
             </g>
@@ -346,7 +443,7 @@ export function TrendChart({
             >
               <div className="mb-2 font-mono text-fg">
                 {hp.year}
-                {hp.year === provisionalYear && <span className="ml-2 font-sans text-[10px] text-signal">Still counting</span>}
+                {hp.year === provisionalYear && <span className="ml-2 font-sans text-[11px] text-signal">Still counting</span>}
               </div>
               <ul className="space-y-1">
                 {visible
@@ -369,7 +466,26 @@ export function TrendChart({
 
       {/* Selected news event */}
       {eventsOn && (
-        <div className="mt-3 min-h-[68px]">
+        <div className="mt-3 flex min-h-17 items-start gap-3">
+          <div className="flex shrink-0 gap-1">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Previous news event"
+              className="grid size-10 place-items-center rounded-full border border-line text-fg-2 transition hover:text-fg active:scale-[0.95] sm:size-8"
+            >
+              <CaretLeftIcon size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Next news event"
+              className="grid size-10 place-items-center rounded-full border border-line text-fg-2 transition hover:text-fg active:scale-[0.95] sm:size-8"
+            >
+              <CaretRightIcon size={14} />
+            </button>
+          </div>
+          <div className="min-w-0 flex-1">
           <AnimatePresence mode="wait">
             {activeEvent ? (
               <motion.div
@@ -390,11 +506,12 @@ export function TrendChart({
               </motion.div>
             ) : (
               <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-fg-3">
-                Hover or tap a marker on the News row to see what happened. Last election shown: {LAST_YEAR}
+                Tap the News row under the chart, or use the arrows, to step through what happened. Last election shown: {LAST_YEAR}
                 {provisionalYear === LAST_YEAR ? " (still counting, hollow markers)" : ""}.
               </motion.p>
             )}
           </AnimatePresence>
+          </div>
         </div>
       )}
     </div>

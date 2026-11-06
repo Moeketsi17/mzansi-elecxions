@@ -96,7 +96,7 @@ export function ProvinceExplorer({ election }: { election: Election }) {
                     </div>
                   </div>
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider transition ${
+                    className={`rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wider transition ${
                       active ? "border-signal/50 text-signal" : "border-line text-fg-3 group-hover:text-fg-2"
                     }`}
                   >
@@ -144,7 +144,7 @@ export function ProvinceExplorer({ election }: { election: Election }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g. Tshwane, Msunduzi"
-                className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-fg-3"
+                className="h-11 w-full bg-transparent text-base outline-none placeholder:text-fg-3 sm:h-10 sm:text-sm"
               />
               {(query || selected) && (
                 <button

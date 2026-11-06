@@ -102,7 +102,7 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={show}
-        className="flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1.5 text-sm text-fg-2 transition hover:border-line-strong hover:text-fg active:scale-[0.98]"
+        className="flex min-h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-line bg-panel px-3 text-sm text-fg-2 sm:min-h-0 sm:py-1.5 transition hover:border-line-strong hover:text-fg active:scale-[0.98]"
         aria-label="Search elections and news"
       >
         <MagnifyingGlassIcon size={16} />
@@ -142,7 +142,7 @@ export function CommandPalette() {
                   }}
                   onKeyDown={onKeyDown}
                   placeholder="Jump to an election, page or news event"
-                  className="h-14 w-full bg-transparent text-[15px] text-fg outline-none placeholder:text-fg-3"
+                  className="h-14 w-full bg-transparent text-base text-fg outline-none placeholder:text-fg-3 sm:text-[15px]"
                   role="combobox"
                   aria-expanded="true"
                   aria-controls="palette-list"

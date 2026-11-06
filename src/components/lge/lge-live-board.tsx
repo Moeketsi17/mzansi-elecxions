@@ -138,7 +138,7 @@ export function LgeLiveBoard({
                     <span className="text-right font-mono text-sm tabular">{fmtPct(r.pct, r.pct < 1 ? 2 : 1)}</span>
                     <span className="hidden text-right font-mono text-xs tabular sm:block">
                       {before == null ? (
-                        <span className="rounded bg-signal/10 px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wider text-signal">New</span>
+                        <span className="rounded bg-signal/10 px-1.5 py-0.5 font-sans text-[11px] uppercase tracking-wider text-signal">New</span>
                       ) : (
                         <span className={r.pct >= before ? "text-fg" : "text-fg-3"}>{fmtDelta(r.pct - before)}</span>
                       )}
