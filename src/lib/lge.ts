@@ -7,6 +7,7 @@ import {
   buildYear,
   CURRENT_LGE,
   LGE_DATES,
+  LGE_BASE,
   LGE_YEARS,
   lgeUrl,
   PROVINCE_IDS,
@@ -33,7 +34,7 @@ async function getJson<T>(url: string): Promise<T> {
     headers: { "User-Agent": "mzansi-elecxions" },
   });
   if (!res.ok) throw new Error(`IEC results feed answered ${res.status}`);
-  return JSON.parse((await res.text()).replace(/^﻿/, "")) as T;
+  return JSON.parse((await res.text()).replace(/^\uFEFF/, "")) as T;
 }
 
 /** The current election, refreshed from the IEC at most once a minute and shared by every visitor. */
@@ -76,12 +77,24 @@ export function previousLgeYear(year: number) {
   return i > 0 ? LGE_YEARS[i - 1] : undefined;
 }
 
+/** IEC party id -> full name for a year. Older results files carry only ids. */
+async function fetchPartyNames(year: number): Promise<Record<number, string>> {
+  "use cache";
+  if (year === CURRENT_LGE) cacheLife("hours");
+  else cacheLife("max");
+  const list = await getJson<{ ID: number; PartyFullName: string }[]>(`${LGE_BASE}/${year}/PartyList.js`);
+  return Object.fromEntries(list.map((p) => [p.ID, p.PartyFullName]));
+}
+
 async function fetchMunicipality(year: number, id: number): Promise<LgeMunicipalityDetail> {
   "use cache";
   if (year === CURRENT_LGE) cacheLife({ stale: 30, revalidate: 60, expire: 180 });
   else cacheLife("max");
-  const raw = await getJson<RawMunicipality>(lgeUrl(year, { municipality: id }));
-  return buildMunicipalityDetail(raw);
+  const [raw, names] = await Promise.all([
+    getJson<RawMunicipality>(lgeUrl(year, { municipality: id })),
+    fetchPartyNames(year).catch(() => ({}) as Record<number, string>),
+  ]);
+  return buildMunicipalityDetail(raw, (pid) => names[pid]);
 }
 
 export async function getMunicipality(year: number, id: number) {

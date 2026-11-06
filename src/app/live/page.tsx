@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { PageIntro } from "@/components/page-intro";
 import { LgeLiveBoard } from "@/components/lge/lge-live-board";
 import { LiveSkeleton } from "@/components/lge/live-skeleton";
+import { LiveRefresh } from "@/components/lge/live-refresh";
+import { CouncilMap } from "@/components/map/council-map";
 import { CURRENT_LGE, getLgeYear, lineageShares, previousLgeYear, snapshotYear } from "@/lib/lge";
 
 export const metadata: Metadata = { title: "Live results" };
@@ -33,5 +35,18 @@ async function Board() {
       </div>
     );
   const prevYear = previousLgeYear(CURRENT_LGE)!;
-  return <LgeLiveBoard initial={result} previous={lineageShares(snapshotYear(prevYear))} previousYear={prevYear} />;
+  const live = !result.data.complete;
+  return (
+    <>
+      {live && <LiveRefresh />}
+      <LgeLiveBoard initial={result} previous={lineageShares(snapshotYear(prevYear))} previousYear={prevYear} />
+      <section className="mt-16 border-t border-line pt-12">
+        <h2 className="mb-1 text-xl tracking-tight">The count on the map</h2>
+        <p className="mb-6 max-w-[70ch] text-sm text-fg-3">
+          Faded councils are still counting. Click a province, then a council, to watch its wards come in.
+        </p>
+        <CouncilMap year={CURRENT_LGE} municipalities={result.data.municipalities} live={live} />
+      </section>
+    </>
+  );
 }

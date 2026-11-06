@@ -8,6 +8,7 @@ import { CouncilBar } from "@/components/lge/council-bar";
 import { MunicipalityExplorer } from "@/components/lge/municipality-explorer";
 import { LiveRefresh } from "@/components/lge/live-refresh";
 import { LiveSkeleton } from "@/components/lge/live-skeleton";
+import { CouncilMap } from "@/components/map/council-map";
 import { reportTime } from "@/components/lge/report-time";
 import { CURRENT_LGE, getLgeYear, isLgeYear, LGE_DATES, LGE_YEARS, lineageShares, previousLgeYear, snapshotYear } from "@/lib/lge";
 import { LGE_COPY } from "@/lib/lge-copy";
@@ -116,6 +117,17 @@ async function YearBody({ year }: { year: number }) {
             />
             <Stat label="Council seats" value={fmtInt(d.seatsTotal)} hint={`${fmtInt(d.municipalities.length)} councils`} />
           </dl>
+        </div>
+      </section>
+
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-[1400px] px-4 py-14 md:px-8">
+          <h2 className="mb-1 text-xl tracking-tight">Map of every council</h2>
+          <p className="mb-6 max-w-[70ch] text-sm text-fg-3">
+            Click a province to zoom in, then a council to see who won each ward. Councils are coloured by the party with the most
+            support; hatched councils are hung.
+          </p>
+          <CouncilMap year={year} municipalities={d.municipalities} live={live} />
         </div>
       </section>
 

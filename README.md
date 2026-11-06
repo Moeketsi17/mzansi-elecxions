@@ -20,10 +20,10 @@ Press `Ctrl K` (or `/`) anywhere to jump to an election, a page or a news event.
 | `/elections` | Every election with its headline, winner and turnout |
 | `/elections/[year]` | Full results, seats, events before the vote, and (2009, 2014) province and municipality breakdowns |
 | `/local` | Local elections hub: the live 2026 count, vote share 2000–2026, hung councils over time |
-| `/local/[year]` | One local election: results, council control, provinces, and every council with its full party result and ward winners |
+| `/local/[year]` | One local election: a map you can drill from country to province to council to ward, results, council control, provinces, and every council with its full party result and ward winners |
 | `/trends` | Vote share, the swing table, seats over time, turnout |
 | `/timeline` | News events grouped by the election that followed them, filterable by topic and party |
-| `/live` | Live counting board for the current local election, updated every minute |
+| `/live` | Live counting board and map for the current local election, updated every minute |
 
 ## Data
 
@@ -53,6 +53,15 @@ Local results come from the IEC's public results dashboard (`results.elections.o
 - **Council detail** (every party and ward winner) is fetched on demand via `/api/lge/[year]/municipality/[id]`.
 
 Once the IEC declares the final 2026 result, run `node scripts/fetch-lge.mts` again so the snapshot holds the final figures.
+
+### Maps
+
+Boundaries come from the same dashboard (`results.elections.org.za/ElectionMap/MapData/{year}/`), as GeoJSON for every council and, per council, every ward. They are converted to simplified TopoJSON (`src/lib/geo-core.ts`), which keeps neighbouring borders gap-free:
+
+- **Council boundaries** for each year are prebuilt into `public/geo/councils-{year}.json` (120–420 KB each) with `node scripts/fetch-geo.mts`.
+- **Ward boundaries** are fetched per council on demand through `/api/geo/[year]/wards/[id]` and cached permanently, since published boundaries don't change.
+
+The map (`src/components/map/council-map.tsx`) is plain SVG drawn with d3-geo: councils are coloured by leading party, hung councils are hatched, councils still counting are drawn darker. Clicking zooms from country to province to council, where each ward is coloured by its winner and shows the winning candidate on hover. Esc zooms out.
 
 `api.elections.org.za` (the IEC's official API) needs a username and password from webmaster@elections.org.za. It has the same results plus candidates and voter lookups, and could replace the dashboard feed once you have credentials. `vmdgisapi.elections.org.za` serves voting-station and boundary maps, not results.
 

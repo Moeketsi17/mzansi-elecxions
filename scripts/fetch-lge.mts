@@ -25,7 +25,7 @@ async function getJson<T>(url: string): Promise<T> {
     try {
       const res = await fetch(`${url}?t=${Date.now()}`, { headers: { "User-Agent": "mzansi-elecxions-snapshot" } });
       if (!res.ok) throw new Error(`${res.status} ${url}`);
-      const text = (await res.text()).replace(/^﻿/, "");
+      const text = (await res.text()).replace(/^\uFEFF/, "");
       return JSON.parse(text) as T;
     } catch (err) {
       if (attempt >= 3) throw err;
